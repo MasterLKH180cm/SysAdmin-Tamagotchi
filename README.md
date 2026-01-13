@@ -217,7 +217,7 @@ Contributions are welcome! Here's how you can help:
 
 **Prerequisites:**
 - Rust 1.70+
-- Node.js 18+ and npm
+- Bun 1.0+ (JavaScript runtime and package manager)
 - Visual Studio Build Tools (for Windows)
 
 **Quick Start:**
@@ -226,9 +226,9 @@ Contributions are welcome! Here's how you can help:
 git clone https://github.com/yourusername/SysAdmin-Tamagotchi.git
 cd SysAdmin-Tamagotchi
 
-# Install frontend dependencies
+# Install frontend dependencies with Bun
 cd ui
-npm install
+bun install
 cd ..
 
 # Run in development mode
