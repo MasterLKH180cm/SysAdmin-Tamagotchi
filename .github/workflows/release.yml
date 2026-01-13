@@ -1,0 +1,246 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v0.1.0)'
+        required: true
+        type: string
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          release_name: SysAdmin Tamagotchi ${{ steps.get_version.outputs.version }}
+          draft: true
+          prerelease: false
+          body: |
+            ## SysAdmin Tamagotchi ${{ steps.get_version.outputs.version }}
+
+            ### What's New
+            - TODO: Add release notes
+
+            ### Installation
+
+            #### Windows
+            1. Download `SysAdmin-Tamagotchi-${{ steps.get_version.outputs.version }}-setup.exe`
+            2. Run the installer
+            3. Follow the installation wizard
+
+            #### System Requirements
+            - Windows 10/11 (64-bit)
+            - WebView2 Runtime (installed automatically)
+            - 50 MB free disk space
+            - 100 MB RAM
+
+            ### Changes
+            See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+  build-windows-release:
+    name: Build and Upload Windows Release
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: ui
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@next
+
+      - name: Build Tauri release
+        run: npm run tauri build
+        working-directory: ui
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Rename NSIS installer
+        run: |
+          $version = "${{ needs.create-release.outputs.version }}" -replace '^v', ''
+          $installer = Get-ChildItem -Path "src-tauri/target/release/bundle/nsis" -Filter "*.exe" | Select-Object -First 1
+          $newName = "SysAdmin-Tamagotchi-${version}-setup.exe"
+          Rename-Item -Path $installer.FullName -NewName $newName
+          echo "INSTALLER_PATH=src-tauri/target/release/bundle/nsis/$newName" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Upload Windows NSIS Installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.INSTALLER_PATH }}
+          asset_name: SysAdmin-Tamagotchi-${{ needs.create-release.outputs.version }}-setup.exe
+          asset_content_type: application/x-msdownload
+
+      - name: Upload Windows MSI (if exists)
+        if: hashFiles('src-tauri/target/release/bundle/msi/*.msi') != ''
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: src-tauri/target/release/bundle/msi/SysAdmin-Tamagotchi_${{ needs.create-release.outputs.version }}_x64_en-US.msi
+          asset_name: SysAdmin-Tamagotchi-${{ needs.create-release.outputs.version }}.msi
+          asset_content_type: application/x-msi
+        continue-on-error: true
+
+      - name: Generate checksums
+        run: |
+          $version = "${{ needs.create-release.outputs.version }}" -replace '^v', ''
+          $installer = "src-tauri/target/release/bundle/nsis/SysAdmin-Tamagotchi-${version}-setup.exe"
+          $hash = Get-FileHash -Path $installer -Algorithm SHA256
+          "$($hash.Hash)  SysAdmin-Tamagotchi-${version}-setup.exe" | Out-File -FilePath "checksums.txt" -Encoding ASCII
+        shell: pwsh
+
+      - name: Upload checksums
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: checksums.txt
+          asset_name: checksums-${{ needs.create-release.outputs.version }}.txt
+          asset_content_type: text/plain
+
+  build-linux-release:
+    name: Build and Upload Linux Release
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: ui
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@next
+
+      - name: Build Tauri release
+        run: npm run tauri build
+        working-directory: ui
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: src-tauri/target/release/bundle/appimage/sysadmin-tamagotchi_${{ needs.create-release.outputs.version }}_amd64.AppImage
+          asset_name: SysAdmin-Tamagotchi-${{ needs.create-release.outputs.version }}-linux-x86_64.AppImage
+          asset_content_type: application/x-executable
+
+  build-macos-release:
+    name: Build and Upload macOS Release
+    needs: create-release
+    runs-on: macos-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: ui
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@next
+
+      - name: Build Tauri release
+        run: npm run tauri build
+        working-directory: ui
+
+      - name: Upload macOS DMG
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: src-tauri/target/release/bundle/dmg/SysAdmin-Tamagotchi_${{ needs.create-release.outputs.version }}_x64.dmg
+          asset_name: SysAdmin-Tamagotchi-${{ needs.create-release.outputs.version }}-macos-x86_64.dmg
+          asset_content_type: application/x-apple-diskimage
