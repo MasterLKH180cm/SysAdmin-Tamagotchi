@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__jetbrains-server__list_directory_tree",
+      "Bash(test:*)",
+      "Bash(git -C /c/Users/angel/SysAdmin-Tamagotchi branch -a)",
+      "Bash(git -C /c/Users/angel/SysAdmin-Tamagotchi worktree list)",
+      "Bash(git -C /c/Users/angel/SysAdmin-Tamagotchi log --oneline --all --graph -10)",
+      "WebSearch",
+      "Bash(cargo check:*)"
+    ]
+  }
+}

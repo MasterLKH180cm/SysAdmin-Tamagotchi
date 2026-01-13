@@ -1,0 +1,28 @@
+[package]
+name = "sysadmin-tamagotchi"
+version = "0.1.0"
+edition = "2021"
+authors = ["SysAdmin Tamagotchi Contributors"]
+description = "A gamified system monitor that lives in your Windows system tray"
+license = "MIT"
+repository = "https://github.com/yourusername/SysAdmin-Tamagotchi"
+readme = "README.md"
+keywords = ["system-monitor", "tray", "windows", "tamagotchi"]
+categories = ["gui", "os::windows-apis"]
+
+[dependencies]
+# System monitoring - cross-platform system information
+sysinfo = "0.32"
+
+# Windows tray icon support
+tray-icon = "0.18"
+
+# Icon loading and manipulation
+image = "0.25"
+
+[profile.release]
+# Optimize for size and speed
+opt-level = "z"       # Optimize for size
+lto = true            # Enable Link Time Optimization
+codegen-units = 1     # Better optimization, slower compile
+strip = true          # Remove debug symbols
