@@ -58,7 +58,7 @@ Your pet is **not just cute—it's functional**. When your RAM is maxed out, CPU
 - **WebView2 Runtime** (usually pre-installed on Windows 11)
 - **For building from source**:
   - Rust 1.70+
-  - Node.js 18+ and npm
+  - Bun 1.0+ (fast JavaScript runtime and package manager)
   - Visual Studio Build Tools (C++ toolchain)
 
 ### Option 1: Download Installer (Recommended)
