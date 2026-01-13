@@ -1,0 +1,78 @@
+# Cargo Deny Configuration
+# https://embarkstudios.github.io/cargo-deny/
+
+# Note: Running `cargo deny check` requires cargo-deny to be installed:
+# cargo install cargo-deny
+
+[advisories]
+# Deny crates with security vulnerabilities
+vulnerability = "deny"
+# Warn about unmaintained crates
+unmaintained = "warn"
+# Warn about crates with unsound code
+unsound = "warn"
+# Warn about yanked crates
+yanked = "warn"
+# Ignore specific advisories (use sparingly)
+ignore = [
+    # Example: "RUSTSEC-2020-0001",
+]
+
+[licenses]
+# Deny crates without a license
+unlicensed = "deny"
+# Allow these licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "Zlib",
+]
+# Deny these licenses
+deny = [
+    "GPL-3.0",
+    "AGPL-3.0",
+]
+# Warn about copyleft licenses
+copyleft = "warn"
+# Allow specific crates with non-standard licenses
+exceptions = [
+    # Example: { allow = ["OpenSSL"], name = "ring" },
+]
+
+[bans]
+# Deny multiple versions of the same crate
+multiple-versions = "warn"
+# Deny crates with wildcards in version requirements
+wildcards = "allow"
+# Highlight specific crates
+highlight = "all"
+# Skip certain crates from duplicate version check
+skip = [
+    # Common crates with multiple versions in dependency tree
+    # Add specific crates here if needed
+]
+# Skip dependency tree branches
+skip-tree = [
+    # Example: { name = "windows-sys", depth = 3 },
+]
+# Deny specific crates entirely
+deny = [
+    # Example: { name = "openssl-sys" },
+]
+
+[sources]
+# Deny crates from unknown sources
+unknown-registry = "deny"
+# Deny crates from git repositories
+unknown-git = "deny"
+# Allow crates.io
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# Allow specific git sources (if needed)
+allow-git = [
+    # Example: "https://github.com/yourusername/your-repo",
+]

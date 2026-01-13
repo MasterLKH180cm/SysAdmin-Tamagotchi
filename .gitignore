@@ -21,3 +21,56 @@ target
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# Node.js / Frontend
+node_modules/
+ui/dist/
+ui/.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build artifacts
+*.exe
+*.msi
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# CI/CD artifacts
+build-*.log
+*.tmp
+*.temp
+
+# Logs
+logs/
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Security
+*.pfx
+*.p12
+*.key
+*.pem
+!src-tauri/icons/*.icns
+
+# Testing
+coverage/
+*.profraw
+*.profdata
+
+# Tauri-specific
+WixTools/
