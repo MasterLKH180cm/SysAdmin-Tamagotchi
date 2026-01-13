@@ -1,0 +1,40 @@
+[package]
+name = "sysadmin-tamagotchi"
+version = "0.1.0"
+description = "A gamified system monitor Tauri app"
+authors = ["SysAdmin Tamagotchi Contributors"]
+license = "MIT"
+repository = "https://github.com/yourusername/SysAdmin-Tamagotchi"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = ["unstable"] }
+tauri-plugin-shell = "2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# System monitoring - cross-platform system information
+sysinfo = "0.32"
+
+# Async runtime for background polling
+tokio = { version = "1", features = ["full"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+[features]
+# This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+# Optimize for size and speed
+opt-level = "z"       # Optimize for size
+lto = true            # Enable Link Time Optimization
+codegen-units = 1     # Better optimization, slower compile
+strip = true          # Remove debug symbols
