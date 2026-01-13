@@ -75,9 +75,9 @@ Your pet is **not just cute—it's functional**. When your RAM is maxed out, CPU
 git clone https://github.com/yourusername/SysAdmin-Tamagotchi.git
 cd SysAdmin-Tamagotchi
 
-# Install frontend dependencies
+# Install frontend dependencies with Bun
 cd ui
-npm install
+bun install
 cd ..
 
 # Build and run in development mode
